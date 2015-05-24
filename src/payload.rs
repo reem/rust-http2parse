@@ -1,4 +1,4 @@
-use {StreamIdentifier};
+use {FrameHeader, StreamIdentifier, Error, Kind, ParserSettings};
 
 #[derive(Copy, Clone, Debug)]
 pub enum Payload<'a> {
@@ -26,6 +26,22 @@ pub enum Payload<'a> {
     }
 }
 
+impl<'a> Payload<'a> {
+    pub fn parse(header: FrameHeader, buf: &'a [u8],
+                 settings: ParserSettings) -> Result<Payload<'a>, Error> {
+        match header.kind {
+            Kind::Data => {
+                parse_payload_with_padding(settings, header, buf, |buf| {
+                    Payload::Data {
+                        data: buf
+                    }
+                })
+            },
+            _ => panic!("unimplemented")
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug)]
 pub struct Priority {
     exclusive: bool,
@@ -49,5 +65,20 @@ pub enum SettingIdentifier {
     MaxConcurrentStreams = 0x3,
     InitialWindowSize = 0x4,
     MaxFrameSize = 0x5
+}
+
+fn parse_payload_with_padding<'a, F>(settings: ParserSettings, header: FrameHeader,
+                                 buf: &'a [u8], cb: F) -> Result<Payload, Error>
+where F: FnOnce(&'a [u8]) -> Payload {
+    if settings.padding {
+        let pad_length = buf[0];
+        if pad_length as u32 > header.length {
+            Err(Error::TooMuchPadding(pad_length))
+        } else {
+            Ok(cb(&buf[1..header.length as usize - pad_length as usize]))
+        }
+    } else {
+        Ok(cb(buf))
+    }
 }
 
