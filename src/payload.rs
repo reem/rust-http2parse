@@ -30,15 +30,27 @@ impl<'a> Payload<'a> {
     pub fn parse(header: FrameHeader, buf: &'a [u8],
                  settings: ParserSettings) -> Result<Payload<'a>, Error> {
         match header.kind {
-            Kind::Data => {
-                parse_payload_with_padding(settings, header, buf, |buf| {
-                    Payload::Data {
-                        data: buf
-                    }
-                })
-            },
+            Kind::Data => Payload::parse_data(header, buf, settings),
+            Kind::Headers => Payload::parse_headers(header, buf, settings),
             _ => panic!("unimplemented")
         }
+    }
+
+    fn parse_data(header: FrameHeader, buf: &'a [u8],
+                  settings: ParserSettings) -> Result<Payload<'a>, Error> {
+        Ok(Payload::Data {
+            data: try!(trim_padding(settings, header, buf))
+        })
+    }
+
+    fn parse_headers(header: FrameHeader, mut buf: &'a [u8],
+                     settings: ParserSettings) -> Result<Payload<'a>, Error> {
+        buf = try!(trim_padding(settings, header, buf));
+        let (buf, priority) = try!(Priority::parse(settings, buf));
+        Ok(Payload::Headers {
+            priority: priority,
+            block: buf
+        })
     }
 }
 
@@ -47,6 +59,25 @@ pub struct Priority {
     exclusive: bool,
     dependency: StreamIdentifier,
     weight: u8
+}
+
+impl Priority {
+    #[inline]
+    pub fn parse(settings: ParserSettings,
+                 buf: &[u8]) -> Result<(&[u8], Option<Priority>), Error> {
+        if settings.priority && buf.len() > 5 {
+            Ok((&buf[5..], Some(Priority {
+                // Most significant bit.
+                exclusive: buf[0] & 0x80 != 0,
+                dependency: StreamIdentifier::parse(buf),
+                weight: buf[4]
+            })))
+        } else if settings.priority {
+            Err(Error::Short)
+        } else {
+            Ok((buf, None))
+        }
+    }
 }
 
 // Settings are (u16, u32) in memory.
@@ -67,18 +98,17 @@ pub enum SettingIdentifier {
     MaxFrameSize = 0x5
 }
 
-fn parse_payload_with_padding<'a, F>(settings: ParserSettings, header: FrameHeader,
-                                 buf: &'a [u8], cb: F) -> Result<Payload, Error>
-where F: FnOnce(&'a [u8]) -> Payload {
+fn trim_padding(settings: ParserSettings, header: FrameHeader,
+                buf: &[u8]) -> Result<&[u8], Error> {
     if settings.padding {
         let pad_length = buf[0];
         if pad_length as u32 > header.length {
             Err(Error::TooMuchPadding(pad_length))
         } else {
-            Ok(cb(&buf[1..header.length as usize - pad_length as usize]))
+            Ok(&buf[1..header.length as usize - pad_length as usize])
         }
     } else {
-        Ok(cb(buf))
+        Ok(buf)
     }
 }
 
