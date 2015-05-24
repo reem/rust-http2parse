@@ -1,4 +1,5 @@
 #![cfg_attr(test, deny(warnings))]
+#![allow(non_upper_case_globals)]
 //#![deny(missing_docs)]
 
 //! # http2parse
@@ -6,7 +7,9 @@
 //! An HTTP2 frame parser.
 //!
 
-// From the spec, or FRAME_HEADER_BITS / 8
+#[macro_use]
+extern crate bitflags;
+
 const FRAME_HEADER_BYTES: usize = 9;
 
 pub use kind::Kind;

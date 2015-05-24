@@ -8,3 +8,6 @@ description = "An HTTP2 frame parser."
 readme = "README.md"
 license = "MIT"
 
+[dependencies]
+bitflags = "~0.1"
+

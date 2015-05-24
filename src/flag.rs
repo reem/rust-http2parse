@@ -1,22 +1,28 @@
-#[repr(u8)]
-#[derive(Copy, Clone, Debug)]
-pub enum Flag {
-    // 0x1 is ACK on SETTINGS frames but END_STREAM on other frames.
-    EndStreamOrAck = 0x1,
-    EndHeaders = 0x4,
-    Padded = 0x8,
-    Priority = 0x20
+bitflags! {
+    #[derive(Debug)]
+    flags Flag: u8 {
+        const END_STREAM = 0x1,
+        const ACK = 0x1,
+        const END_HEADERS = 0x4,
+        const PADDED = 0x8,
+        const PRIORITY = 0x20
+    }
 }
 
 impl Flag {
-    pub fn new(byte: u8) -> Result<Flag, ()> {
-        match byte {
-            0x1 => Ok(Flag::EndStreamOrAck),
-            0x4 => Ok(Flag::EndHeaders),
-            0x8 => Ok(Flag::Padded),
-            0x20 => Ok(Flag::Priority),
-            _ => Err(())
+    pub fn new(data: u8) -> Result<Flag, ()> {
+        match Flag::from_bits(data) {
+            Some(v) => Ok(v),
+            None => Err(())
         }
     }
+
+    // Note that ACK and END_STREAM are the same value, but they are only present
+    // on different frame types.
+    pub fn ack() -> Flag { ACK }
+    pub fn end_stream() -> Flag { END_STREAM }
+    pub fn end_headers() -> Flag { END_HEADERS }
+    pub fn padded() -> Flag { PADDED }
+    pub fn priority() -> Flag { PRIORITY }
 }
 
