@@ -38,7 +38,16 @@ pub enum Error {
 
     /// The padding length was larger than the frame-header-specified
     /// length of the payload.
-    TooMuchPadding(u8)
+    TooMuchPadding(u8),
+
+    /// The payload length specified by the frame header was shorter than
+    /// necessary for the parser settings specified.
+    ///
+    /// This happens if, for instance, the priority flag is set and the
+    /// header length is shorter than a stream dependency.
+    ///
+    /// `PayloadLengthTooShort` should be treated as a protocol error.
+    PayloadLengthTooShort
 }
 
 #[derive(Copy, Clone, Debug)]
