@@ -26,3 +26,27 @@ impl Flag {
     pub fn priority() -> Flag { PRIORITY }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::Flag;
+
+    const FLAG_EMPTY: u8 = 0x0;
+    const FLAG_END_STREAM_OR_ACK: u8 = 0x1;
+    const FLAG_END_HEADERS: u8 = 0x4;
+    const FLAG_PADDED: u8 = 0x8;
+
+    #[test]
+    fn test_flag_empty() {
+        assert_eq!(Flag::empty().bits(), FLAG_EMPTY);
+    }
+
+    #[test]
+    fn test_flag_from_bits() {
+        assert_eq!(Flag::from_bits(FLAG_EMPTY).unwrap(), Flag::empty());
+        assert_eq!(Flag::from_bits(FLAG_END_HEADERS | FLAG_PADDED).unwrap(),
+                   Flag::end_headers() | Flag::padded());
+        assert_eq!(Flag::from_bits(FLAG_END_STREAM_OR_ACK | FLAG_PADDED).unwrap(),
+                   Flag::end_stream() | Flag::padded());
+    }
+}
+
