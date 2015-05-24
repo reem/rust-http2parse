@@ -56,7 +56,9 @@ impl StreamIdentifier {
             ((buf[0] as u32) << 24) |
             ((buf[1] as u32) << 16) |
             ((buf[2] as u32) << 8) |
-             (buf[3] as u32)
+             (buf[3] as u32) |
+             // Clear the most significant bit.
+             (1 << 31 as u32)
         )
     }
 }
