@@ -1,3 +1,4 @@
+use std::{slice, mem};
 use {FrameHeader, StreamIdentifier, Error, Kind, ParserSettings};
 
 #[derive(Copy, Clone, Debug)]
@@ -32,10 +33,17 @@ impl<'a> Payload<'a> {
         match header.kind {
             Kind::Data => Payload::parse_data(header, buf, settings),
             Kind::Headers => Payload::parse_headers(header, buf, settings),
+            Kind::Priority => {
+                let (_, priority) = try!(Priority::parse(settings, buf));
+                Ok(Payload::Priority(priority.unwrap()))
+            },
+            Kind::Reset => Payload::parse_reset(header, buf),
+            Kind::Settings => Payload::parse_settings(header, buf),
             _ => panic!("unimplemented")
         }
     }
 
+    #[inline]
     fn parse_data(header: FrameHeader, buf: &'a [u8],
                   settings: ParserSettings) -> Result<Payload<'a>, Error> {
         Ok(Payload::Data {
@@ -43,6 +51,7 @@ impl<'a> Payload<'a> {
         })
     }
 
+    #[inline]
     fn parse_headers(header: FrameHeader, mut buf: &'a [u8],
                      settings: ParserSettings) -> Result<Payload<'a>, Error> {
         buf = try!(trim_padding(settings, header, buf));
@@ -51,6 +60,36 @@ impl<'a> Payload<'a> {
             priority: priority,
             block: buf
         })
+    }
+
+    #[inline]
+    fn parse_reset(header: FrameHeader,
+                   buf: &'a [u8]) -> Result<Payload<'a>, Error> {
+        if header.length < 4 {
+            return Err(Error::PayloadLengthTooShort)
+        }
+
+        Ok(Payload::Reset(
+            ((buf[0] as u32) << 24) |
+            ((buf[1] as u32) << 16) |
+            ((buf[2] as u32) << 8) |
+             (buf[3] as u32)))
+    }
+
+    #[inline]
+    fn parse_settings(header: FrameHeader,
+                      buf: &'a [u8]) -> Result<Payload<'a>, Error> {
+        if header.length % mem::size_of::<Setting>() as u32 != 0 {
+            return Err(Error::PartialSettingLength)
+        }
+
+        Ok(Payload::Settings(
+            unsafe {
+                slice::from_raw_parts(
+                    buf.as_ptr() as *const Setting,
+                    buf[..header.length as usize].len() / mem::size_of::<Setting>())
+            }
+        ))
     }
 }
 
@@ -65,15 +104,13 @@ impl Priority {
     #[inline]
     pub fn parse(settings: ParserSettings,
                  buf: &[u8]) -> Result<(&[u8], Option<Priority>), Error> {
-        if settings.priority && buf.len() > 5 {
+        if settings.priority {
             Ok((&buf[5..], Some(Priority {
                 // Most significant bit.
                 exclusive: buf[0] & 0x80 != 0,
                 dependency: StreamIdentifier::parse(buf),
                 weight: buf[4]
             })))
-        } else if settings.priority {
-            Err(Error::Short)
         } else {
             Ok((buf, None))
         }

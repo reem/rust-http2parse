@@ -41,13 +41,17 @@ pub enum Error {
     TooMuchPadding(u8),
 
     /// The payload length specified by the frame header was shorter than
-    /// necessary for the parser settings specified.
+    /// necessary for the parser settings specified and the frame type.
     ///
     /// This happens if, for instance, the priority flag is set and the
     /// header length is shorter than a stream dependency.
     ///
     /// `PayloadLengthTooShort` should be treated as a protocol error.
-    PayloadLengthTooShort
+    PayloadLengthTooShort,
+
+    /// The payload length specified by the frame header of a settings frame
+    /// was not a round multiple of the size of a single setting.
+    PartialSettingLength
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -69,6 +73,19 @@ impl StreamIdentifier {
              // Clear the most significant bit.
              (1 << 31 as u32)
         )
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct ErrorCode(pub u32);
+
+impl ErrorCode {
+    pub fn parse(buf: &[u8]) -> ErrorCode {
+        ErrorCode(
+            ((buf[0] as u32) << 24) |
+            ((buf[1] as u32) << 16) |
+            ((buf[2] as u32) << 8) |
+             (buf[3] as u32))
     }
 }
 
