@@ -39,6 +39,7 @@ impl<'a> Payload<'a> {
             },
             Kind::Reset => Payload::parse_reset(header, buf),
             Kind::Settings => Payload::parse_settings(header, buf),
+            Kind::Ping => Payload::parse_ping(header, buf),
             _ => panic!("unimplemented")
         }
     }
@@ -90,6 +91,18 @@ impl<'a> Payload<'a> {
                     buf[..header.length as usize].len() / mem::size_of::<Setting>())
             }
         ))
+    }
+
+    #[inline]
+    fn parse_ping(header: FrameHeader,
+                  buf: &'a [u8]) -> Result<Payload<'a>, Error> {
+        if header.length != 8 {
+            return Err(Error::InvalidLengthForPing)
+        }
+
+        let payload = buf[..8].as_ptr() as *const u64;
+        let data = unsafe { *payload };
+        Ok(Payload::Ping(data))
     }
 }
 

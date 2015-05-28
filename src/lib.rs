@@ -51,7 +51,11 @@ pub enum Error {
 
     /// The payload length specified by the frame header of a settings frame
     /// was not a round multiple of the size of a single setting.
-    PartialSettingLength
+    PartialSettingLength,
+
+    /// The payload length specified by the frame header of a ping frame
+    /// was not 8, the length of the opaque data of a ping frame.
+    InvalidLengthForPing
 }
 
 #[derive(Copy, Clone, Debug)]
