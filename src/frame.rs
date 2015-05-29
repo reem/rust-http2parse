@@ -33,7 +33,7 @@ impl<'a> Frame<'a> {
 
         Ok(Frame {
             header: header,
-            payload: try!(Payload::parse(header, buf, settings))
+            payload: try!(Payload::parse(header, &buf[..header.length as usize], settings))
         })
     }
 }
