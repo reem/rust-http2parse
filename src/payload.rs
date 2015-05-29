@@ -1,5 +1,5 @@
 use std::{slice, mem};
-use {FrameHeader, StreamIdentifier, Error, Kind, ParserSettings};
+use {FrameHeader, StreamIdentifier, Error, Kind, ParserSettings, ErrorCode};
 
 #[derive(Copy, Clone, Debug)]
 pub enum Payload<'a> {
@@ -11,7 +11,7 @@ pub enum Payload<'a> {
         block: &'a [u8]
     },
     Priority(Priority),
-    Reset(u32),
+    Reset(ErrorCode),
     Settings(&'a [Setting]),
     PushPromise {
         id: StreamIdentifier,
@@ -70,11 +70,7 @@ impl<'a> Payload<'a> {
             return Err(Error::PayloadLengthTooShort)
         }
 
-        Ok(Payload::Reset(
-            ((buf[0] as u32) << 24) |
-            ((buf[1] as u32) << 16) |
-            ((buf[2] as u32) << 8) |
-             (buf[3] as u32)))
+        Ok(Payload::Reset(ErrorCode::parse(buf)))
     }
 
     #[inline]
