@@ -20,7 +20,8 @@ pub enum Payload<'a> {
     Ping(u64),
     GoAway {
         last: StreamIdentifier,
-        error: u32
+        error: ErrorCode,
+        data: &'a [u8]
     },
     WindowUpdate {
         size_increment: u32
@@ -40,6 +41,7 @@ impl<'a> Payload<'a> {
             Kind::Reset => Payload::parse_reset(header, buf),
             Kind::Settings => Payload::parse_settings(header, buf),
             Kind::Ping => Payload::parse_ping(header, buf),
+            Kind::GoAway => Payload::parse_goaway(buf),
             _ => panic!("unimplemented")
         }
     }
@@ -99,6 +101,19 @@ impl<'a> Payload<'a> {
         let payload = buf[..8].as_ptr() as *const u64;
         let data = unsafe { *payload };
         Ok(Payload::Ping(data))
+    }
+
+    #[inline]
+    fn parse_goaway(buf: &'a [u8]) -> Result<Payload<'a>, Error> {
+        let last = StreamIdentifier::parse(buf);
+        let error = ErrorCode::parse(&buf[4..]);
+        let rest = &buf[8..];
+
+        Ok(Payload::GoAway {
+            last: last,
+            error: error,
+            data: rest
+        })
     }
 }
 
