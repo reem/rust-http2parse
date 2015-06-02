@@ -53,9 +53,9 @@ pub enum Error {
     /// was not a round multiple of the size of a single setting.
     PartialSettingLength,
 
-    /// The payload length specified by the frame header of a ping frame
-    /// was not 8, the length of the opaque data of a ping frame.
-    InvalidLengthForPing
+    /// The payload length specified by the frame header was not the
+    /// value necessary for the specific frame type.
+    InvalidPayloadLength
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -70,12 +70,9 @@ pub struct StreamIdentifier(pub u32);
 impl StreamIdentifier {
     pub fn parse(buf: &[u8]) -> StreamIdentifier {
         StreamIdentifier(
-            ((buf[0] as u32) << 24) |
-            ((buf[1] as u32) << 16) |
-            ((buf[2] as u32) << 8) |
-             (buf[3] as u32) |
-             // Clear the most significant bit.
-             (1 << 31 as u32)
+            decode_u32(buf) |
+            // Clear the most significant bit.
+            (1 << 31 as u32)
         )
     }
 }
@@ -85,11 +82,23 @@ pub struct ErrorCode(pub u32);
 
 impl ErrorCode {
     pub fn parse(buf: &[u8]) -> ErrorCode {
-        ErrorCode(
-            ((buf[0] as u32) << 24) |
-            ((buf[1] as u32) << 16) |
-            ((buf[2] as u32) << 8) |
-             (buf[3] as u32))
+        ErrorCode(decode_u32(buf))
     }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct SizeIncrement(pub u32);
+
+impl SizeIncrement {
+    pub fn parse(buf: &[u8]) -> SizeIncrement {
+        SizeIncrement(decode_u32(buf))
+    }
+}
+
+fn decode_u32(buf: &[u8]) -> u32 {
+    ((buf[0] as u32) << 24) |
+    ((buf[1] as u32) << 16) |
+    ((buf[2] as u32) << 8)  |
+     (buf[3] as u32)
 }
 

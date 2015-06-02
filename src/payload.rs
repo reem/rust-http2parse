@@ -1,5 +1,6 @@
 use std::{slice, mem};
-use {FrameHeader, StreamIdentifier, Error, Kind, ParserSettings, ErrorCode};
+use {FrameHeader, StreamIdentifier, Error, Kind,
+     ParserSettings, ErrorCode, SizeIncrement};
 
 #[derive(Copy, Clone, Debug)]
 pub enum Payload<'a> {
@@ -23,9 +24,7 @@ pub enum Payload<'a> {
         error: ErrorCode,
         data: &'a [u8]
     },
-    WindowUpdate {
-        size_increment: u32
-    }
+    WindowUpdate(SizeIncrement)
 }
 
 impl<'a> Payload<'a> {
@@ -41,7 +40,8 @@ impl<'a> Payload<'a> {
             Kind::Reset => Payload::parse_reset(header, buf),
             Kind::Settings => Payload::parse_settings(header, buf),
             Kind::Ping => Payload::parse_ping(header, buf),
-            Kind::GoAway => Payload::parse_goaway(buf),
+            Kind::GoAway => Payload::parse_goaway(header, buf),
+            Kind::WindowUpdate => Payload::parse_window_update(header, buf),
             _ => panic!("unimplemented")
         }
     }
@@ -95,7 +95,7 @@ impl<'a> Payload<'a> {
     fn parse_ping(header: FrameHeader,
                   buf: &'a [u8]) -> Result<Payload<'a>, Error> {
         if header.length != 8 {
-            return Err(Error::InvalidLengthForPing)
+            return Err(Error::InvalidPayloadLength)
         }
 
         let payload = buf[..8].as_ptr() as *const u64;
@@ -104,7 +104,12 @@ impl<'a> Payload<'a> {
     }
 
     #[inline]
-    fn parse_goaway(buf: &'a [u8]) -> Result<Payload<'a>, Error> {
+    fn parse_goaway(header: FrameHeader,
+                    buf: &'a [u8]) -> Result<Payload<'a>, Error> {
+        if header.length < 8 {
+            return Err(Error::PayloadLengthTooShort)
+        }
+
         let last = StreamIdentifier::parse(buf);
         let error = ErrorCode::parse(&buf[4..]);
         let rest = &buf[8..];
@@ -114,6 +119,16 @@ impl<'a> Payload<'a> {
             error: error,
             data: rest
         })
+    }
+
+    #[inline]
+    fn parse_window_update(header: FrameHeader,
+                           buf: &'a [u8]) -> Result<Payload<'a>, Error> {
+        if header.length != 4 {
+            return Err(Error::InvalidPayloadLength)
+        }
+
+        Ok(Payload::WindowUpdate(SizeIncrement::parse(buf)))
     }
 }
 
