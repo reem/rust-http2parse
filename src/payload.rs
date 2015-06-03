@@ -15,7 +15,7 @@ pub enum Payload<'a> {
     Reset(ErrorCode),
     Settings(&'a [Setting]),
     PushPromise {
-        id: StreamIdentifier,
+        promised: StreamIdentifier,
         block: &'a [u8]
     },
     Ping(u64),
@@ -24,7 +24,8 @@ pub enum Payload<'a> {
         error: ErrorCode,
         data: &'a [u8]
     },
-    WindowUpdate(SizeIncrement)
+    WindowUpdate(SizeIncrement),
+    Continuation(&'a [u8])
 }
 
 impl<'a> Payload<'a> {
@@ -42,7 +43,8 @@ impl<'a> Payload<'a> {
             Kind::Ping => Payload::parse_ping(header, buf),
             Kind::GoAway => Payload::parse_goaway(header, buf),
             Kind::WindowUpdate => Payload::parse_window_update(header, buf),
-            _ => panic!("unimplemented")
+            Kind::PushPromise => Payload::parse_push_promise(header, buf, settings),
+            Kind::Continuation => Ok(Payload::Continuation(buf))
         }
     }
 
@@ -129,6 +131,24 @@ impl<'a> Payload<'a> {
         }
 
         Ok(Payload::WindowUpdate(SizeIncrement::parse(buf)))
+    }
+
+    #[inline]
+    fn parse_push_promise(header: FrameHeader, mut buf: &'a [u8],
+                          settings: ParserSettings) -> Result<Payload<'a>, Error> {
+        buf = try!(trim_padding(settings, header, buf));
+
+        if buf.len() < 4 {
+            return Err(Error::PayloadLengthTooShort)
+        }
+
+        let promised = StreamIdentifier::parse(buf);
+        let block = &buf[4..];
+
+        Ok(Payload::PushPromise {
+             promised: promised,
+             block: block
+        })
     }
 }
 
