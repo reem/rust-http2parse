@@ -6,34 +6,12 @@ pub struct Frame<'a> {
     pub payload: Payload<'a>
 }
 
-const PRIORITY_BYTES: u32 = 5;
-const PADDING_BYTES: u32 = 1;
-
 impl<'a> Frame<'a> {
     pub fn parse(header: FrameHeader, buf: &[u8],
                  settings: ParserSettings) -> Result<Frame, Error> {
-        if buf.len() < header.length as usize {
-            return Err(Error::Short)
-        }
-
-        let min_payload_length =
-            if settings.priority && settings.padding {
-                PRIORITY_BYTES + PADDING_BYTES
-            } else if settings.priority {
-                PRIORITY_BYTES
-            } else if settings.padding {
-                PADDING_BYTES
-            } else {
-                0
-            };
-
-        if header.length < min_payload_length {
-            return Err(Error::PayloadLengthTooShort)
-        }
-
         Ok(Frame {
             header: header,
-            payload: try!(Payload::parse(header, &buf[..header.length as usize], settings))
+            payload: try!(Payload::parse(header, buf, settings))
         })
     }
 }

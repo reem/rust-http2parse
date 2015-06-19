@@ -28,9 +28,33 @@ pub enum Payload<'a> {
     Continuation(&'a [u8])
 }
 
+const PRIORITY_BYTES: u32 = 5;
+const PADDING_BYTES: u32 = 1;
+
 impl<'a> Payload<'a> {
-    pub fn parse(header: FrameHeader, buf: &'a [u8],
+    pub fn parse(header: FrameHeader, mut buf: &'a [u8],
                  settings: ParserSettings) -> Result<Payload<'a>, Error> {
+        if buf.len() < header.length as usize {
+            return Err(Error::Short)
+        }
+
+        let min_payload_length =
+            if settings.priority && settings.padding {
+                PRIORITY_BYTES + PADDING_BYTES
+            } else if settings.priority {
+                PRIORITY_BYTES
+            } else if settings.padding {
+                PADDING_BYTES
+            } else {
+                0
+            };
+
+        if header.length < min_payload_length {
+            return Err(Error::PayloadLengthTooShort)
+        }
+
+        buf = &buf[..header.length as usize];
+
         match header.kind {
             Kind::Data => Payload::parse_data(header, buf, settings),
             Kind::Headers => Payload::parse_headers(header, buf, settings),
