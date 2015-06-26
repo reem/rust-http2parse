@@ -22,10 +22,7 @@ mod flag;
 mod payload;
 mod frame;
 
-// contains type and flags
-// Bitflags?
-// things that can go wrong during parsing
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Error {
     /// A full frame header was not passed.
     Short,
@@ -58,26 +55,24 @@ pub enum Error {
     InvalidPayloadLength
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct ParserSettings {
     padding: bool,
     priority: bool
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct StreamIdentifier(pub u32);
 
 impl StreamIdentifier {
     pub fn parse(buf: &[u8]) -> StreamIdentifier {
         StreamIdentifier(
-            decode_u32(buf) |
-            // Clear the most significant bit.
-            (1 << 31 as u32)
+            decode_u32(buf) & ((1 << 31) - 1)
         )
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct ErrorCode(pub u32);
 
 impl ErrorCode {
@@ -86,7 +81,7 @@ impl ErrorCode {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct SizeIncrement(pub u32);
 
 impl SizeIncrement {
