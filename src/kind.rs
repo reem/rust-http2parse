@@ -1,5 +1,5 @@
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Kind {
     Data = 0,
     Headers = 1,
@@ -10,12 +10,13 @@ pub enum Kind {
     Ping = 6,
     GoAway = 7,
     WindowUpdate = 8,
-    Continuation = 9
+    Continuation = 9,
+    Unregistered
 }
 
 impl Kind {
-    pub fn new(byte: u8) -> Result<Kind, ()> {
-        return Ok(match byte {
+    pub fn new(byte: u8) -> Kind {
+        return match byte {
             0 => Kind::Data,
             1 => Kind::Headers,
             2 => Kind::Priority,
@@ -26,8 +27,8 @@ impl Kind {
             7 => Kind::GoAway,
             8 => Kind::WindowUpdate,
             9 => Kind::Continuation,
-            _ => return Err(())
-        })
+            _ => Kind::Unregistered
+        }
     }
 }
 

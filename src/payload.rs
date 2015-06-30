@@ -2,7 +2,7 @@ use std::{slice, mem};
 use {FrameHeader, StreamIdentifier, Error, Kind,
      ParserSettings, ErrorCode, SizeIncrement};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Payload<'a> {
     Data {
         data: &'a [u8]
@@ -25,7 +25,8 @@ pub enum Payload<'a> {
         data: &'a [u8]
     },
     WindowUpdate(SizeIncrement),
-    Continuation(&'a [u8])
+    Continuation(&'a [u8]),
+    Unregistered
 }
 
 const PRIORITY_BYTES: u32 = 5;
@@ -68,7 +69,8 @@ impl<'a> Payload<'a> {
             Kind::GoAway => Payload::parse_goaway(header, buf),
             Kind::WindowUpdate => Payload::parse_window_update(header, buf),
             Kind::PushPromise => Payload::parse_push_promise(header, buf, settings),
-            Kind::Continuation => Ok(Payload::Continuation(buf))
+            Kind::Continuation => Ok(Payload::Continuation(buf)),
+            Kind::Unregistered => Ok(Payload::Unregistered)
         }
     }
 
@@ -176,7 +178,7 @@ impl<'a> Payload<'a> {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Priority {
     exclusive: bool,
     dependency: StreamIdentifier,
@@ -202,14 +204,14 @@ impl Priority {
 
 // Settings are (u16, u32) in memory.
 #[repr(packed)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Setting {
     pub identifier: SettingIdentifier,
     value: u32
 }
 
 #[repr(u16)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum SettingIdentifier {
     HeaderTableSize = 0x1,
     EnablePush = 0x2,
