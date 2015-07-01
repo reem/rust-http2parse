@@ -39,3 +39,53 @@ impl FrameHeader {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use {Kind, Flag, FrameHeader, StreamIdentifier};
+
+    #[test]
+    fn test_frame_header_parse_empty() {
+        assert_eq!(FrameHeader {
+            length: 0,
+            kind: Kind::Data,
+            flag: Flag::empty(),
+            id: StreamIdentifier(0)
+        }, FrameHeader::parse(&[
+            0u8, 0u8, 0u8, // length
+            0u8, // type/kind
+            0u8, // flags
+            0u8, 0u8, 0u8, 0u8 // reserved bit + stream identifier
+        ]).unwrap());
+    }
+
+    #[test]
+    fn test_frame_header_parse_full() {
+        assert_eq!(FrameHeader {
+            length: 16777215,
+            kind: Kind::Unregistered,
+            flag: Flag::empty(),
+            id: StreamIdentifier(2147483647)
+        }, FrameHeader::parse(&[
+            0xFF, 0xFF, 0xFF, // length
+            0xFF, // type/kind
+            0x0, // flags
+            0xFF, 0xFF, 0xFF, 0xFF // reserved bit + stream identifier
+        ]).unwrap());
+    }
+
+    #[test]
+    fn test_frame_header_parse() {
+        assert_eq!(FrameHeader {
+            length: 66051,
+            kind: Kind::Settings,
+            flag: Flag::end_stream(),
+            id: StreamIdentifier(101124105)
+        }, FrameHeader::parse(&[
+            0x1, 0x2, 0x3, // length
+            0x4, // type/kind
+            0x1, // flags
+            0x6, 0x7, 0x8, 0x9 // reserved bit + stream identifier
+        ]).unwrap());
+    }
+}
+
