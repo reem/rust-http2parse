@@ -97,3 +97,13 @@ fn decode_u32(buf: &[u8]) -> u32 {
      (buf[3] as u32)
 }
 
+#[test]
+fn test_stream_id_ignores_highest_bit() {
+    let raw1 = [0x7F, 0xFF, 0xFF, 0xFF];
+    let raw2 = [0xFF, 0xFF, 0xFF, 0xFF];
+
+    assert_eq!(
+        StreamIdentifier::parse(&raw1),
+        StreamIdentifier::parse(&raw2));
+}
+
