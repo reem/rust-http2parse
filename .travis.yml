@@ -1,17 +1,18 @@
 language: rust
+rust: nightly
 sudo: false
 
 script:
     - cargo build
     - cargo test
-    - cargo bench --no-run
+    - cargo bench
     - cargo doc
 
 after_success:
     - if [ "$TRAVIS_PULL_REQUEST" == false && test == "TRAVIS_BRANCH" == "master" ]; then
     - curl https://raw.githubusercontent.com/reem/rust-gh-docs/master/make-docs.sh > docs.sh
     - chmod u+x docs.sh
-    - ./docs.sh reem project-name
+    - ./docs.sh reem http2parse
 
 env:
   global:
