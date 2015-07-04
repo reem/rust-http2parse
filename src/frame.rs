@@ -87,5 +87,25 @@ mod test {
             0x6, 0x7, 0x8, 0x9 // reserved bit + stream identifier
         ]).unwrap());
     }
+
+    #[bench]
+    fn bench_frame_header_parse(b: &mut ::test::Bencher) {
+        b.bytes = ::FRAME_HEADER_BYTES as u64;
+
+        b.iter(|| {
+            let mut buf = &[
+                0x1, 0x2, 0x3, // length
+                0x4, // type/kind
+                0x1, // flags
+                0x6, 0x7, 0x8, 0x9 // reserved bit + stream identifier
+            ];
+
+            // Prevent constant propagation.
+            buf = ::test::black_box(buf);
+
+            // Prevent dead code elimination.
+            ::test::black_box(FrameHeader::parse(buf).unwrap());
+        });
+    }
 }
 

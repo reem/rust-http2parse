@@ -1,4 +1,5 @@
 #![cfg_attr(test, deny(warnings))]
+#![cfg_attr(test, feature(test))]
 #![allow(non_upper_case_globals)]
 //#![deny(missing_docs)]
 
@@ -9,6 +10,9 @@
 
 #[macro_use]
 extern crate bitflags;
+
+#[cfg(test)]
+extern crate test;
 
 const FRAME_HEADER_BYTES: usize = 9;
 
@@ -91,6 +95,7 @@ impl SizeIncrement {
 }
 
 fn decode_u32(buf: &[u8]) -> u32 {
+    // TODO: Can be optimized to a noop on BE machines.
     ((buf[0] as u32) << 24) |
     ((buf[1] as u32) << 16) |
     ((buf[2] as u32) << 8)  |
