@@ -192,7 +192,7 @@ impl Priority {
         if settings.priority {
             Ok((&buf[5..], Some(Priority {
                 // Most significant bit.
-                exclusive: buf[0] & 0x80 != 0,
+                exclusive: buf[0] & 0x7F != buf[0],
                 dependency: StreamIdentifier::parse(buf),
                 weight: buf[4]
             })))
@@ -206,8 +206,21 @@ impl Priority {
 #[repr(packed)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Setting {
-    pub identifier: SettingIdentifier,
+    identifier: u16,
     value: u32
+}
+
+impl Setting {
+    pub fn identifier(&self) -> Option<SettingIdentifier> {
+        match self.identifier {
+            0x1 => Some(SettingIdentifier::HeaderTableSize),
+            0x2 => Some(SettingIdentifier::EnablePush),
+            0x3 => Some(SettingIdentifier::MaxConcurrentStreams),
+            0x4 => Some(SettingIdentifier::InitialWindowSize),
+            0x5 => Some(SettingIdentifier::MaxFrameSize),
+            _ => None
+        }
+    }
 }
 
 #[repr(u16)]
