@@ -2,7 +2,7 @@ use std::{slice, mem};
 use {FrameHeader, StreamIdentifier, Error, Kind,
      ParserSettings, ErrorCode, SizeIncrement};
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Payload<'a> {
     Data {
         data: &'a [u8]
@@ -178,7 +178,7 @@ impl<'a> Payload<'a> {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Priority {
     exclusive: bool,
     dependency: StreamIdentifier,
@@ -204,7 +204,7 @@ impl Priority {
 
 // Settings are (u16, u32) in memory.
 #[repr(packed)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Setting {
     identifier: u16,
     value: u32
@@ -224,7 +224,7 @@ impl Setting {
 }
 
 #[repr(u16)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum SettingIdentifier {
     HeaderTableSize = 0x1,
     EnablePush = 0x2,

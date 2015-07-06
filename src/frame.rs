@@ -1,6 +1,6 @@
 use {Payload, Error, Flag, Kind, StreamIdentifier, ParserSettings, FRAME_HEADER_BYTES};
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Frame<'a> {
     pub header: FrameHeader,
     pub payload: Payload<'a>
@@ -16,7 +16,7 @@ impl<'a> Frame<'a> {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct FrameHeader {
     pub length: u32,
     pub kind: Kind,

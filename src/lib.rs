@@ -26,7 +26,7 @@ mod flag;
 mod payload;
 mod frame;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Error {
     /// A full frame header was not passed.
     Short,
@@ -59,13 +59,13 @@ pub enum Error {
     InvalidPayloadLength
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ParserSettings {
     padding: bool,
     priority: bool
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct StreamIdentifier(pub u32);
 
 impl StreamIdentifier {
@@ -76,7 +76,7 @@ impl StreamIdentifier {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ErrorCode(pub u32);
 
 impl ErrorCode {
@@ -85,7 +85,7 @@ impl ErrorCode {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SizeIncrement(pub u32);
 
 impl SizeIncrement {

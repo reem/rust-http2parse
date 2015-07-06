@@ -1,5 +1,5 @@
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Kind {
     Data = 0,
     Headers = 1,
