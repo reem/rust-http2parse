@@ -1,7 +1,7 @@
 #![cfg_attr(test, deny(warnings))]
 #![cfg_attr(test, feature(test))]
 #![allow(non_upper_case_globals)]
-//#![deny(missing_docs)]
+// #![deny(missing_docs)]
 
 //! # http2parse
 //!
@@ -10,6 +10,7 @@
 
 #[macro_use]
 extern crate bitflags;
+extern crate byteorder;
 
 #[cfg(test)]
 extern crate test;
@@ -21,11 +22,14 @@ pub use flag::Flag;
 pub use frame::{Frame, FrameHeader};
 pub use payload::{Payload, Priority, Setting, SettingIdentifier};
 
+use byteorder::ByteOrder;
+
 mod kind;
 mod flag;
 mod payload;
 mod frame;
 
+/// Errors that can occur during parsing an HTTP/2 frame.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Error {
     /// A full frame header was not passed.
@@ -60,7 +64,7 @@ pub enum Error {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ParserSettings {
+struct ParserSettings {
     padding: bool,
     priority: bool
 }
@@ -71,7 +75,7 @@ pub struct StreamIdentifier(pub u32);
 impl StreamIdentifier {
     pub fn parse(buf: &[u8]) -> StreamIdentifier {
         StreamIdentifier(
-            decode_u32(buf) & ((1 << 31) - 1)
+            byteorder::BigEndian::read_u32(buf) & ((1 << 31) - 1)
         )
     }
 }
@@ -79,9 +83,16 @@ impl StreamIdentifier {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ErrorCode(pub u32);
 
+pub enum HttpError {
+    Protocol,
+    Internal,
+    FlowControlError,
+    SettingsTimeout,
+}
+
 impl ErrorCode {
     pub fn parse(buf: &[u8]) -> ErrorCode {
-        ErrorCode(decode_u32(buf))
+        ErrorCode(byteorder::BigEndian::read_u32(buf))
     }
 }
 
@@ -90,16 +101,8 @@ pub struct SizeIncrement(pub u32);
 
 impl SizeIncrement {
     pub fn parse(buf: &[u8]) -> SizeIncrement {
-        SizeIncrement(decode_u32(buf))
+        SizeIncrement(byteorder::BigEndian::read_u32(buf))
     }
-}
-
-fn decode_u32(buf: &[u8]) -> u32 {
-    // TODO: Can be optimized to a noop on BE machines.
-    ((buf[0] as u32) << 24) |
-    ((buf[1] as u32) << 16) |
-    ((buf[2] as u32) << 8)  |
-     (buf[3] as u32)
 }
 
 #[test]

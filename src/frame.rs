@@ -1,4 +1,4 @@
-use {Payload, Error, Flag, Kind, StreamIdentifier, ParserSettings, FRAME_HEADER_BYTES};
+use {Payload, Error, Flag, Kind, StreamIdentifier, FRAME_HEADER_BYTES};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Frame<'a> {
@@ -7,11 +7,10 @@ pub struct Frame<'a> {
 }
 
 impl<'a> Frame<'a> {
-    pub fn parse(header: FrameHeader, buf: &[u8],
-                 settings: ParserSettings) -> Result<Frame, Error> {
+    pub fn parse(header: FrameHeader, buf: &[u8]) -> Result<Frame, Error> {
         Ok(Frame {
             header: header,
-            payload: try!(Payload::parse(header, buf, settings))
+            payload: try!(Payload::parse(header, buf))
         })
     }
 }

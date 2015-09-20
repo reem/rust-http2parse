@@ -1,6 +1,6 @@
 use std::{slice, mem};
 use {FrameHeader, StreamIdentifier, Error, Kind,
-     ParserSettings, ErrorCode, SizeIncrement};
+     ParserSettings, ErrorCode, SizeIncrement, Flag};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Payload<'a> {
@@ -33,8 +33,12 @@ const PRIORITY_BYTES: u32 = 5;
 const PADDING_BYTES: u32 = 1;
 
 impl<'a> Payload<'a> {
-    pub fn parse(header: FrameHeader, mut buf: &'a [u8],
-                 settings: ParserSettings) -> Result<Payload<'a>, Error> {
+    pub fn parse(header: FrameHeader, mut buf: &'a [u8]) -> Result<Payload<'a>, Error> {
+        let settings = ParserSettings {
+            padding: header.flag.contains(Flag::padded()),
+            priority: header.flag.contains(Flag::priority())
+        };
+
         if buf.len() < header.length as usize {
             return Err(Error::Short)
         }
@@ -60,7 +64,7 @@ impl<'a> Payload<'a> {
             Kind::Data => Payload::parse_data(header, buf, settings),
             Kind::Headers => Payload::parse_headers(header, buf, settings),
             Kind::Priority => {
-                let (_, priority) = try!(Priority::parse(settings, buf));
+                let (_, priority) = try!(Priority::parse(true, buf));
                 Ok(Payload::Priority(priority.unwrap()))
             },
             Kind::Reset => Payload::parse_reset(header, buf),
@@ -86,7 +90,7 @@ impl<'a> Payload<'a> {
     fn parse_headers(header: FrameHeader, mut buf: &'a [u8],
                      settings: ParserSettings) -> Result<Payload<'a>, Error> {
         buf = try!(trim_padding(settings, header, buf));
-        let (buf, priority) = try!(Priority::parse(settings, buf));
+        let (buf, priority) = try!(Priority::parse(settings.priority, buf));
         Ok(Payload::Headers {
             priority: priority,
             block: buf
@@ -187,9 +191,8 @@ pub struct Priority {
 
 impl Priority {
     #[inline]
-    pub fn parse(settings: ParserSettings,
-                 buf: &[u8]) -> Result<(&[u8], Option<Priority>), Error> {
-        if settings.priority {
+    pub fn parse(present: bool, buf: &[u8]) -> Result<(&[u8], Option<Priority>), Error> {
+        if present {
             Ok((&buf[5..], Some(Priority {
                 // Most significant bit.
                 exclusive: buf[0] & 0x7F != buf[0],
