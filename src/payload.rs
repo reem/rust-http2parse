@@ -1,4 +1,4 @@
-use std::{slice, mem};
+use std::{slice, mem, fmt};
 use {FrameHeader, StreamIdentifier, Error, Kind,
      ParserSettings, ErrorCode, SizeIncrement, Flag};
 
@@ -207,10 +207,16 @@ impl Priority {
 
 // Settings are (u16, u32) in memory.
 #[repr(packed)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Setting {
     identifier: u16,
     value: u32
+}
+
+impl fmt::Debug for Setting {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self.identifier(), f)
+    }
 }
 
 impl Setting {
