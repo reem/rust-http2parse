@@ -9,9 +9,16 @@ description = "An HTTP2 frame parser."
 readme = "README.md"
 license = "MIT"
 
+[features]
+random = ["rand"]
+
 [dependencies]
 bitflags = "0.1"
 byteorder = "0.3"
+
+[dependencies.rand]
+version = "0.3"
+optional = true
 
 [dev-dependencies]
 rand = "0.3"
