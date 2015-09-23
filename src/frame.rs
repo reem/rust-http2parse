@@ -29,7 +29,7 @@ pub struct FrameHeader {
 impl FrameHeader {
     #[inline]
     pub fn parse(buf: &[u8]) -> Result<FrameHeader, Error> {
-        if buf.len() > FRAME_HEADER_BYTES {
+        if buf.len() < FRAME_HEADER_BYTES {
             return Err(Error::Short);
         }
 
