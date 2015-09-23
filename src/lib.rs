@@ -14,7 +14,7 @@ extern crate byteorder;
 
 #[cfg(test)]
 extern crate test;
-#[cfg(test)]
+#[cfg(any(test, feature = "random"))]
 extern crate rand;
 
 const FRAME_HEADER_BYTES: usize = 9;

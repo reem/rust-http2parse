@@ -1,5 +1,8 @@
 use {Payload, Error, Flag, Kind, StreamIdentifier, FRAME_HEADER_BYTES};
 
+#[cfg(feature = "random")]
+use rand::{Rand, Rng};
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Frame<'a> {
     pub header: FrameHeader,
@@ -47,23 +50,23 @@ impl FrameHeader {
     }
 }
 
+#[cfg(feature = "random")]
+impl Rand for FrameHeader {
+    fn rand<R: Rng>(rng: &mut R) -> Self {
+        FrameHeader {
+            length: rng.gen_range(0, 1 << 24),
+            kind: Kind::new(rng.gen_range(0, 9)),
+            flag: *rng.choose(&[Flag::padded() | Flag::priority()])
+                    .unwrap_or(&Flag::empty()),
+            id: StreamIdentifier(rng.gen_range(0, 1 << 31))
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod test {
     use {Kind, Flag, FrameHeader, StreamIdentifier};
-    use rand::{self, Rand, Rng};
-
-    impl Rand for FrameHeader {
-        fn rand<R: Rng>(rng: &mut R) -> Self {
-            FrameHeader {
-                length: rng.gen_range(0, 1 << 24),
-                kind: Kind::new(rng.gen_range(0, 9)),
-                flag: *rng.choose(&[Flag::padded() | Flag::priority()])
-                        .unwrap_or(&Flag::empty()),
-                id: StreamIdentifier(rng.gen_range(0, 1 << 31))
-            }
-        }
-    }
-
     #[test]
     fn test_frame_header_parse_empty() {
         assert_eq!(FrameHeader {
@@ -119,7 +122,7 @@ mod test {
         }
 
         for _ in 0..1000 {
-            roundtrip(rand::random())
+            roundtrip(::rand::random())
         }
     }
 
