@@ -4,7 +4,7 @@ sudo: false
 
 script:
     - cargo build
-    - cargo test
+    - cargo test --features random
     - cargo bench
     - cargo doc
 
