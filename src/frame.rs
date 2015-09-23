@@ -112,6 +112,7 @@ mod test {
         ]).unwrap());
     }
 
+    #[cfg(feature = "rand")]
     #[test]
     fn test_frame_header_encoding() {
         fn roundtrip(header: FrameHeader) {
@@ -125,6 +126,10 @@ mod test {
             roundtrip(::rand::random())
         }
     }
+
+    #[cfg(not(feature = "rand"))]
+    #[test]
+    fn no_frame_header_encoding_test_because_no_rand() {}
 
     #[bench]
     fn bench_frame_header_parse(b: &mut ::test::Bencher) {
