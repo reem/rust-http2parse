@@ -215,7 +215,7 @@ pub struct Setting {
 
 impl fmt::Debug for Setting {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(self.identifier(), f)
+        fmt::Debug::fmt(&self.identifier(), f)
     }
 }
 

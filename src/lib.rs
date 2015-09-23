@@ -14,6 +14,8 @@ extern crate byteorder;
 
 #[cfg(test)]
 extern crate test;
+#[cfg(test)]
+extern crate rand;
 
 const FRAME_HEADER_BYTES: usize = 9;
 
@@ -78,6 +80,10 @@ impl StreamIdentifier {
             byteorder::BigEndian::read_u32(buf) & ((1 << 31) - 1)
         )
     }
+
+    pub fn encode(&self, buf: &mut [u8]) {
+        encode_32u(buf, self.0)
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -103,6 +109,21 @@ impl SizeIncrement {
     pub fn parse(buf: &[u8]) -> SizeIncrement {
         SizeIncrement(byteorder::BigEndian::read_u32(buf))
     }
+}
+
+#[inline(always)]
+fn encode_24u(buf: &mut [u8], val: u32) {
+    buf[0] = (val >> 16) as u8;
+    buf[1] = (val >> 8) as u8;
+    buf[2] = val as u8;
+}
+
+#[inline(always)]
+fn encode_32u(buf: &mut [u8], val: u32) {
+    buf[0] = (val >> 24) as u8;
+    buf[1] = (val >> 16) as u8;
+    buf[2] = (val >> 8) as u8;
+    buf[3] = val as u8;
 }
 
 #[test]

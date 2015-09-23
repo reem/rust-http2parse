@@ -13,3 +13,6 @@ license = "MIT"
 bitflags = "0.1"
 byteorder = "0.3"
 
+[dev-dependencies]
+rand = "0.3"
+

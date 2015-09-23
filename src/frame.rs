@@ -24,6 +24,7 @@ pub struct FrameHeader {
 }
 
 impl FrameHeader {
+    #[inline]
     pub fn parse(buf: &[u8]) -> Result<FrameHeader, Error> {
         if buf.len() > FRAME_HEADER_BYTES {
             return Err(Error::Short);
@@ -36,11 +37,32 @@ impl FrameHeader {
             id: StreamIdentifier::parse(&buf[5..])
         })
     }
+
+    #[inline]
+    pub fn encode(&self, buf: &mut [u8]) {
+        ::encode_24u(buf, self.length);
+        buf[3] = self.kind.encode();
+        buf[4] = self.flag.bits();
+        self.id.encode(&mut buf[5..]);
+    }
 }
 
 #[cfg(test)]
 mod test {
     use {Kind, Flag, FrameHeader, StreamIdentifier};
+    use rand::{self, Rand, Rng};
+
+    impl Rand for FrameHeader {
+        fn rand<R: Rng>(rng: &mut R) -> Self {
+            FrameHeader {
+                length: rng.gen_range(0, 1 << 24),
+                kind: Kind::new(rng.gen_range(0, 9)),
+                flag: *rng.choose(&[Flag::padded() | Flag::priority()])
+                        .unwrap_or(&Flag::empty()),
+                id: StreamIdentifier(rng.gen_range(0, 1 << 31))
+            }
+        }
+    }
 
     #[test]
     fn test_frame_header_parse_empty() {
@@ -85,6 +107,20 @@ mod test {
             0x1, // flags
             0x6, 0x7, 0x8, 0x9 // reserved bit + stream identifier
         ]).unwrap());
+    }
+
+    #[test]
+    fn test_frame_header_encoding() {
+        fn roundtrip(header: FrameHeader) {
+            let buf = &mut [0; 9];
+            header.encode(buf);
+
+            assert_eq!(header, FrameHeader::parse(&*buf).unwrap())
+        }
+
+        for _ in 0..1000 {
+            roundtrip(rand::random())
+        }
     }
 
     #[bench]
