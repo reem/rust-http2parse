@@ -1,7 +1,7 @@
 [package]
 
 name = "http2parse"
-version = "0.1.4"
+version = "0.2.0"
 authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
 repository = "https://github.com/reem/rust-http2parse.git"
 keywords = ["http2", "web", "parser", "frames"]
