@@ -225,6 +225,23 @@ mod test {
     }
 
     #[bench]
+    #[cfg(feature = "random")]
+    fn bench_frame_encode(b: &mut ::test::Bencher) {
+        let frames = vec![::rand::random::<Frame>(); 5];
+
+        b.bytes = frames.iter().map(|frame| frame.encoded_len() as u64)
+            .fold(0, |a, b| a + b);
+
+        let mut buf = vec![0; 2000];
+        b.iter(|| {
+            for frame in &frames {
+                frame.encode(&mut buf);
+                ::test::black_box(&buf);
+            }
+        });
+    }
+
+    #[bench]
     fn bench_frame_header_parse(b: &mut ::test::Bencher) {
         b.bytes = ::FRAME_HEADER_BYTES as u64;
 
