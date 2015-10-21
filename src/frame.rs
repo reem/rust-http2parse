@@ -22,6 +22,11 @@ impl<'a> Frame<'a> {
         self.header.encode(buf);
         self.payload.encode(&mut buf[FRAME_HEADER_BYTES..]) + FRAME_HEADER_BYTES
     }
+
+    /// How many bytes this Frame will use in a buffer when encoding.
+    pub fn encoded_len(&self) -> usize {
+        FRAME_HEADER_BYTES + self.payload.encoded_len()
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -160,7 +165,7 @@ mod test {
         ]).unwrap());
     }
 
-    #[cfg(feature = "rand")]
+    #[cfg(feature = "random")]
     #[test]
     fn test_frame_header_encoding() {
         fn roundtrip(header: FrameHeader) {
@@ -175,7 +180,7 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
+    #[cfg(feature = "random")]
     #[test]
     fn test_frame_encoding() {
         fn roundtrip(buf: &mut [u8], frame: Frame) {
@@ -193,9 +198,31 @@ mod test {
         }
     }
 
-    #[cfg(not(feature = "rand"))]
+    #[cfg(not(feature = "random"))]
     #[test]
     fn no_frame_encoding_test_because_no_rand() {}
+
+    #[bench]
+    #[cfg(feature = "random")]
+    fn bench_frame_parse(b: &mut ::test::Bencher) {
+        // Each iter = 5 frames
+        let frames = vec![::rand::random::<Frame>(); 5];
+        let bufs = frames.iter().map(|frame| {
+            let mut buf = vec![0; 2000];
+            frame.encode(&mut buf);
+            buf
+        }).collect::<Vec<_>>();
+
+        b.bytes = frames.iter().map(|frame| frame.encoded_len() as u64)
+            .fold(0, |a, b| a + b);
+
+        b.iter(|| {
+            for buf in &bufs {
+                Frame::parse(FrameHeader::parse(&buf[..9]).unwrap(),
+                             &buf[9..]).unwrap();
+            }
+        });
+    }
 
     #[bench]
     fn bench_frame_header_parse(b: &mut ::test::Bencher) {
