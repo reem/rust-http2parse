@@ -50,7 +50,7 @@ impl Kind {
 
 #[test]
 fn test_encode() {
-    for n in (0..10) {
+    for n in 0..10 {
         assert_eq!(Kind::new(n), Kind::new(Kind::new(n).encode()));
     }
 }

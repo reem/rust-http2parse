@@ -1,6 +1,7 @@
 #![cfg_attr(test, deny(warnings))]
 #![cfg_attr(test, feature(test))]
 #![allow(non_upper_case_globals)]
+#![feature(slice_bytes)]
 // #![deny(missing_docs)]
 
 //! # http2parse
@@ -81,8 +82,8 @@ impl StreamIdentifier {
         )
     }
 
-    pub fn encode(&self, buf: &mut [u8]) {
-        encode_32u(buf, self.0)
+    pub fn encode(&self, buf: &mut [u8]) -> usize {
+        encode_u32(buf, self.0)
     }
 }
 
@@ -100,6 +101,10 @@ impl ErrorCode {
     pub fn parse(buf: &[u8]) -> ErrorCode {
         ErrorCode(byteorder::BigEndian::read_u32(buf))
     }
+
+    pub fn encode(&self, buf: &mut [u8]) -> usize {
+        encode_u32(buf, self.0)
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -109,21 +114,31 @@ impl SizeIncrement {
     pub fn parse(buf: &[u8]) -> SizeIncrement {
         SizeIncrement(byteorder::BigEndian::read_u32(buf))
     }
+
+    pub fn encode(&self, buf: &mut [u8]) -> usize {
+        encode_u32(buf, self.0)
+    }
 }
 
 #[inline(always)]
-fn encode_24u(buf: &mut [u8], val: u32) {
+fn encode_u24(buf: &mut [u8], val: u32) -> usize {
     buf[0] = (val >> 16) as u8;
     buf[1] = (val >> 8) as u8;
     buf[2] = val as u8;
+
+    3
 }
 
 #[inline(always)]
-fn encode_32u(buf: &mut [u8], val: u32) {
-    buf[0] = (val >> 24) as u8;
-    buf[1] = (val >> 16) as u8;
-    buf[2] = (val >> 8) as u8;
-    buf[3] = val as u8;
+fn encode_u32(buf: &mut [u8], val: u32) -> usize {
+    byteorder::BigEndian::write_u32(buf, val);
+    4
+}
+
+#[inline(always)]
+fn encode_u64(buf: &mut [u8], val: u64) -> usize {
+    byteorder::BigEndian::write_u64(buf, val);
+    8
 }
 
 #[test]
