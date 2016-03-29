@@ -1,5 +1,4 @@
 use std::{slice, mem, fmt};
-use std::slice::bytes::copy_memory;
 use {FrameHeader, StreamIdentifier, Error, Kind,
      ParserSettings, ErrorCode, SizeIncrement, Flag};
 
@@ -453,9 +452,9 @@ fn trim_padding(settings: ParserSettings, header: FrameHeader,
 }
 
 #[inline]
-fn encode_memory(src: &[u8], dst: &mut [u8]) -> usize {
-    copy_memory(src, dst);
-    src.len()
+fn encode_memory(src: &[u8], mut dst: &mut [u8]) -> usize {
+    use std::io::Write;
+    dst.write(src).unwrap()
 }
 
 #[test]

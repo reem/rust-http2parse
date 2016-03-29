@@ -1,6 +1,10 @@
 language: rust
-rust: nightly
 sudo: false
+
+rust:
+    - stable
+    - beta
+    - nightly
 
 script:
     - cargo build

@@ -1,7 +1,6 @@
 #![cfg_attr(test, deny(warnings))]
 #![cfg_attr(test, feature(test))]
 #![allow(non_upper_case_globals)]
-#![feature(slice_bytes)]
 // #![deny(missing_docs)]
 
 //! # http2parse
