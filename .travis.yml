@@ -8,8 +8,8 @@ rust:
 
 script:
     - cargo build
-    - cargo test --features random
-    - cargo bench
+    - cargo test --features rand
+    - if [ $RUST=nightly ]cargo bench --features bench
     - cargo doc
 
 after_success:

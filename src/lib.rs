@@ -1,5 +1,5 @@
 #![cfg_attr(test, deny(warnings))]
-#![cfg_attr(test, feature(test))]
+#![cfg_attr(feature = "bench", feature(test))]
 #![allow(non_upper_case_globals)]
 // #![deny(missing_docs)]
 
