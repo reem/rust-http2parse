@@ -334,6 +334,11 @@ impl Setting {
     }
 
     #[inline]
+    pub fn value(&self) -> u32 {
+        self.value
+    }
+
+    #[inline]
     fn to_bytes(settings: &[Setting]) -> &[u8] {
         unsafe {
             slice::from_raw_parts(
