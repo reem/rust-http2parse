@@ -322,6 +322,14 @@ impl fmt::Debug for Setting {
 
 impl Setting {
     #[inline]
+    pub fn new(identifier: SettingIdentifier, value: u32) -> Setting {
+        Setting {
+            identifier: identifier as u16,
+            value: value,
+        }
+    }
+
+    #[inline]
     pub fn identifier(&self) -> Option<SettingIdentifier> {
         match self.identifier {
             0x1 => Some(SettingIdentifier::HeaderTableSize),
